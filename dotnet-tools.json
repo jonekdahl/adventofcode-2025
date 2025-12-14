@@ -8,6 +8,13 @@
         "fantomas"
       ],
       "rollForward": false
+    },
+    "dotnet-trace": {
+      "version": "9.0.652701",
+      "commands": [
+        "dotnet-trace"
+      ],
+      "rollForward": false
     }
   }
 }
