@@ -63,13 +63,12 @@ let parse2 (data: string array) =
 
     operators
     |> Array.map (fun (operator, opIdx, width) ->
+        let firstColumn = opIdx + width - 1
+        let lastColumn = opIdx
+
         let numbers =
-            seq { opIdx + width - 1 .. -1 .. opIdx }
-            |> Seq.map (fun idx ->
-                numberLines
-                |> Array.map (fun l -> l[idx..idx])
-                |> String.concat ""
-                |> int64<string>)
+            seq { firstColumn .. -1 .. lastColumn }
+            |> Seq.map (fun col -> numberLines |> Seq.map (fun l -> l[col]) |> String.Concat |> int64<string>)
             |> Array.ofSeq
 
         numbers, operator)
