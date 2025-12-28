@@ -24,7 +24,7 @@ let mergePaths (p1: Paths) (p2: Paths) =
       fft = p1.fft + p2.fft
       both = p1.both + p2.both }
 
-let prependToPath (device: string) (p: Paths) =
+let addDeviceToPath (device: string) (p: Paths) =
     match device with
     | "dac" ->
         { p with
@@ -58,7 +58,7 @@ let paths devices (memoizedPaths: Params -> Paths) (fromDevice: string, toDevice
               dac = 0
               fft = 0
               both = 0 }
-        |> prependToPath fromDevice
+        |> addDeviceToPath fromDevice
 
 
 let memoizeRecursive f =
