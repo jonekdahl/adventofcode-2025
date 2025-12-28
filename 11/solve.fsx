@@ -16,13 +16,20 @@ type Paths =
       fft: int64
       both: int64 }
 
-type Params = string * string
+module Paths =
+    let plus (p1: Paths) (p2: Paths) =
+        { neither = p1.neither + p2.neither
+          dac = p1.dac + p2.dac
+          fft = p1.fft + p2.fft
+          both = p1.both + p2.both }
 
-let mergePaths (p1: Paths) (p2: Paths) =
-    { neither = p1.neither + p2.neither
-      dac = p1.dac + p2.dac
-      fft = p1.fft + p2.fft
-      both = p1.both + p2.both }
+    let zero =
+        { neither = 0
+          dac = 0
+          fft = 0
+          both = 0 }
+
+    let all p = p.neither + p.both + p.dac + p.fft
 
 let addDeviceToPath (device: string) (p: Paths) =
     match device with
@@ -40,7 +47,7 @@ let addDeviceToPath (device: string) (p: Paths) =
             both = p.both + p.dac }
     | _ -> p
 
-let paths devices (memoizedPaths: Params -> Paths) (fromDevice: string, toDevice: string) : Paths =
+let paths devices memoizedPaths (fromDevice: string, toDevice: string) : Paths =
 
     if fromDevice = toDevice then
         { neither = 1
@@ -48,16 +55,11 @@ let paths devices (memoizedPaths: Params -> Paths) (fromDevice: string, toDevice
           fft = 0
           both = 0 }
     else
-        let _, nextDevices = devices |> Seq.find (fun (d, _) -> d = fromDevice)
+        let _, nextDevices = devices |> Seq.find (fun d -> fst d = fromDevice)
 
         nextDevices
         |> Seq.map (fun nextDevice -> memoizedPaths (nextDevice, toDevice))
-        |> Seq.fold
-            mergePaths
-            { neither = 0
-              dac = 0
-              fft = 0
-              both = 0 }
+        |> Seq.fold Paths.plus Paths.zero
         |> addDeviceToPath fromDevice
 
 
@@ -76,7 +78,5 @@ let memoizeRecursive f =
 
 let memoizedPaths devices = memoizeRecursive (paths devices)
 
-let sumPaths p = p.neither + p.both + p.dac + p.fft
-
-("you", "out") |> memoizedPaths devices1 |> sumPaths |> printfn "Part 2: %d"
+("you", "out") |> memoizedPaths devices1 |> Paths.all |> printfn "Part 1: %d"
 ("svr", "out") |> memoizedPaths devices2 |> _.both |> printfn "Part 2: %d"
