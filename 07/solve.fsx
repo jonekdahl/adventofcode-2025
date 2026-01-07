@@ -23,7 +23,7 @@ let updateRow (row: string) (rowAbove: string) =
         | '^' -> '^'
         | '.' ->
             let isBeamSplitLeft = isSplitter row (idx - 1) && isBeam rowAbove (idx - 1)
-            let isBeamAbove = isBeam rowAbove (idx)
+            let isBeamAbove = isBeam rowAbove idx
             let isBeamSplitRight = isSplitter row (idx + 1) && isBeam rowAbove (idx + 1)
 
             if isBeamAbove || isBeamSplitLeft || isBeamSplitRight then
@@ -65,34 +65,29 @@ let splits (diagram: string array) =
 
 diagramWithBeams |> splits |> Seq.length |> printfn "Part 1: %A"
 
+let timelineCounts =
+    let counts = Array.init rows (fun _ -> Array.create cols 0L)
 
-let timelines =
-    fun countTimelines (row, col) -> // Trick: Pass the (memoized) function as a parameter
-        if row >= rows - 1 then
-            1L
-        else
-            let splitterBelow = isSplitter diagram[row + 1] col
+    // start with bottom row ...
+    for col in 0 .. cols - 1 do
+        counts[rows - 1][col] <- if isBeam diagramWithBeams[rows - 1] col then 1L else 0L
 
-            if splitterBelow then
-                countTimelines (row + 1, col - 1) + countTimelines (row + 1, col + 1)
-            else
-                countTimelines (row + 1, col)
+    // ... and work upwards
+    for row in rows - 2 .. -1 .. 0 do
+        for col in 0 .. cols - 1 do
+            counts[row][col] <-
+                let splitterBelow = isSplitter diagram[row + 1] col
+                let beamBelow = isBeam diagramWithBeams[row + 1] col
+                let beam = isBeam diagramWithBeams[row] col
 
-let memoizeRecursive f =
-    let cache = Dictionary<_, _>()
+                match beam, beamBelow, splitterBelow with
+                | true, false, true -> counts[row + 1][col - 1] + counts[row + 1][col + 1]
+                | true, true, false -> counts[row + 1][col]
+                | false, _, _ -> 0L
+                | other -> failwith $"Other: %A{other}"
 
-    let rec memoized param =
-        match cache.TryGetValue param with
-        | true, cachedValue -> cachedValue
-        | false, _ ->
-            let result = f memoized param // Pass the memoized function as a parameter to allow "recursive" calls to be memoized
-            cache.Add(param, result)
-            result
-
-    memoized
+    counts
 
 
-let memoizedTimelines = memoizeRecursive timelines
-
-let startPos = 0, diagram[0].IndexOf 'S'
-startPos |> memoizedTimelines |> printfn "Part 2: %d"
+let startCol = diagram[0].IndexOf 'S'
+timelineCounts[0][startCol] |> printfn "Part 2: %d"
